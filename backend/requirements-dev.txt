@@ -1,0 +1,4 @@
+-r requirements.txt
+pytest==9.*
+# Needed by starlette.testclient.
+httpx==0.28.*

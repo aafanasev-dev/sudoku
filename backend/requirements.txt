@@ -1,0 +1,6 @@
+fastapi==0.141.*
+uvicorn[standard]==0.53.*
+authlib==1.8.*
+# Authlib's HTTP client for the token exchange with Google.
+httpx2==2.13.*
+itsdangerous==2.2.*
