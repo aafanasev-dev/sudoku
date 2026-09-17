@@ -76,6 +76,10 @@ docker compose up --build
 # → http://localhost:8080
 ```
 
+To try it without a Google client, run `./run.sh`. It sets `DEBUG_AUTH_EMAIL`,
+which skips Google and signs every visitor in as that address (local URLs only,
+see [auth_config.md](auth_config.md#debug-sign-in)).
+
 Compose runs two containers and one volume:
 
 | Service | What it is |

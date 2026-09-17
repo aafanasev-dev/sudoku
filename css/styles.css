@@ -231,6 +231,16 @@ button, select, input { font: inherit; color: inherit; }
   font-size: 0.9rem;
   color: var(--muted);
 }
+.debug-badge {
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: var(--warn-bg);
+  color: var(--warn-text);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
 
 .resume-card {
   display: flex;

@@ -8,6 +8,8 @@ from . import auth, progress
 from .config import Settings
 from .db import connect, migrate
 
+log = logging.getLogger(__name__)
+
 SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS"})
 SESSION_MAX_AGE = 30 * 24 * 60 * 60
 
@@ -18,7 +20,11 @@ def create_app(settings: Settings | None = None) -> FastAPI:
 
     app = FastAPI(title="Sudoku API", docs_url=None, redoc_url=None, openapi_url=None)
     app.state.settings = settings
-    app.state.oauth = auth.create_oauth(settings)
+    if settings.debug_auth:
+        log.warning("DEBUG_AUTH_EMAIL is set: Google sign-in is off and every visitor is %s", settings.debug_auth_email)
+        app.state.oauth = None
+    else:
+        app.state.oauth = auth.create_oauth(settings)
 
     @app.middleware("http")
     async def same_origin_writes(request: Request, call_next):

@@ -98,6 +98,18 @@ Open `PUBLIC_BASE_URL` and click **Sign in with Google**.
 The backend refuses to start if `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET` or
 `SESSION_SECRET` is missing. Check `docker compose logs backend`.
 
+### Debug sign-in
+
+Set `DEBUG_AUTH_EMAIL` to skip Google entirely: every visitor is signed in as
+that address, and the Google variables become optional. `./run.sh` does this
+with `claudiusvibekodic@gmail.com` (override it by exporting `DEBUG_AUTH_EMAIL`),
+and also generates a `SESSION_SECRET` if `.env` has none.
+
+- The backend refuses to start in this mode unless `PUBLIC_BASE_URL` is
+  `localhost`, `127.0.0.1` or `::1`.
+- `/api/me` returns `debugAuth: true`, and the page shows a **debug** badge
+  instead of the **Sign out** button.
+
 ## 5. Production checklist
 
 - Put the web container behind a TLS-terminating proxy or load balancer, and

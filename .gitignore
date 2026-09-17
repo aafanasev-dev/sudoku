@@ -1,4 +1,11 @@
+# Secrets: never commit. .env.example is the template.
 .env
+.env.*
+!.env.example
+client_secret*.json
+*.pem
+*.key
+
 node_modules/
 __pycache__/
 .pytest_cache/

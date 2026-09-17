@@ -23,6 +23,7 @@ npm run test:backend                               # pytest (runs from backend/,
 cd backend && .venv/bin/pytest tests/test_progress.py -k ladder
 
 docker compose up --build                          # full stack on http://localhost:8080 (needs .env)
+./run.sh                                           # same, with debug sign-in (DEBUG_AUTH_EMAIL), no Google client needed
 docker compose up -d --build web                   # rebuild after frontend changes (files are baked into the image)
 docker compose logs backend
 ```
@@ -58,6 +59,7 @@ There's no dev server without Docker: nginx supplies the `/api` and `/auth` prox
 - **`auth.py`:**
   - Authlib Google OIDC client on `app.state.oauth`. Tests replace `app.state.oauth.google.authorize_access_token` to fake sign-in (see the `sign_in` fixture).
   - The session is Starlette's signed cookie `sudoku_session`, holding only `user_id`.
+  - **Debug auth:** with `DEBUG_AUTH_EMAIL` set, `app.state.oauth` is `None`, `current_user` and `/auth/login` sign that user in without Google (`sign_in_debug_user`), and `/api/me` returns `debugAuth: true` so `main.js` shows a badge and hides Sign out. `Settings.from_env` refuses it unless `PUBLIC_BASE_URL` is localhost.
 - **`db.py`:**
   - A stdlib `sqlite3` connection per request (`check_same_thread=False`), in autocommit mode. Writes go through `with transaction(db):` (`BEGIN IMMEDIATE`).
   - Schema changes are appended to `MIGRATIONS`, tracked with `PRAGMA user_version`. Never edit an existing entry.
@@ -75,3 +77,4 @@ There's no dev server without Docker: nginx supplies the `/api` and `/auth` prox
 - **New top-level asset directories:** the web `Dockerfile` copies only `index.html`, `css/` and `js/`, so add any new directory there. The root `.dockerignore` excludes `backend/`, `tests/` and `*.md`.
 - **Dependency pins:** Authlib uses `httpx2` (runtime dependency). Plain `httpx` is only in `requirements-dev.txt`, for Starlette's TestClient.
 - **Secrets:** `.env` holds real secrets and is gitignored. `.env.example` is the template.
+- **Env injection:** the app is deployed by freeholdy, which injects each container's env through `env_file:` entries in its generated `docker-compose.override.yml`. So `env_file: .env` is optional (`required: false`), and don't add `environment: X: ${X:-}` for app settings: `environment` beats `env_file` and would blank the injected values. Local-only overrides go in `docker-compose.local.yml` (used by `run.sh`).

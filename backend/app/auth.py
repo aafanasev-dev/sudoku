@@ -49,12 +49,16 @@ Db = Annotated[sqlite3.Connection, Depends(get_db)]
 
 def current_user(request: Request, db: Db) -> sqlite3.Row:
     user_id = request.session.get("user_id")
-    if not isinstance(user_id, int):
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not signed in")
-    user = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+    user = None
+    if isinstance(user_id, int):
+        user = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
+        if user is None:
+            request.session.clear()
     if user is None:
-        request.session.clear()
-        raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not signed in")
+        if not request.app.state.settings.debug_auth:
+            raise HTTPException(status.HTTP_401_UNAUTHORIZED, "Not signed in")
+        user_id = sign_in_debug_user(request, db)
+        user = db.execute("SELECT * FROM users WHERE id = ?", (user_id,)).fetchone()
     return user
 
 
@@ -84,11 +88,22 @@ def upsert_user(db: sqlite3.Connection, userinfo: dict) -> int:
     return row["id"]
 
 
+def sign_in_debug_user(request: Request, db: sqlite3.Connection) -> int:
+    """DEBUG_AUTH_EMAIL mode: sign in as the configured user without Google."""
+    email = request.app.state.settings.debug_auth_email
+    user_id = upsert_user(db, {"sub": f"debug:{email}", "email": email, "name": email.split("@")[0]})
+    request.session["user_id"] = user_id
+    return user_id
+
+
 @router.get("/auth/login")
-async def login(request: Request):
+async def login(request: Request, db: Db):
     settings: Settings = request.app.state.settings
     # Drop any previous identity before starting a new sign-in.
     request.session.pop("user_id", None)
+    if settings.debug_auth:
+        sign_in_debug_user(request, db)
+        return RedirectResponse("/", status_code=status.HTTP_303_SEE_OTHER)
     return await request.app.state.oauth.google.authorize_redirect(
         request, settings.redirect_uri, prompt="select_account"
     )
@@ -120,5 +135,11 @@ def logout(request: Request) -> Response:
 
 
 @router.get("/api/me")
-def me(user: CurrentUser) -> dict:
-    return {"id": user["id"], "name": user["name"], "email": user["email"], "picture": user["picture"]}
+def me(request: Request, user: CurrentUser) -> dict:
+    return {
+        "id": user["id"],
+        "name": user["name"],
+        "email": user["email"],
+        "picture": user["picture"],
+        "debugAuth": request.app.state.settings.debug_auth,
+    }

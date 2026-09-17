@@ -10,7 +10,11 @@ services:
 
   backend:
     build: ./backend
-    env_file: .env
+    # Optional: on freeholdy the env is injected through its generated
+    # override instead, and a git deploy has no .env.
+    env_file:
+      - path: .env
+        required: false
     environment:
       DATABASE_PATH: /data/sudoku.db
     volumes:

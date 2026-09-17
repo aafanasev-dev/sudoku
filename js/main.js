@@ -93,6 +93,9 @@ async function boot() {
     const me = await api.get('/api/me');
     $('user-name').textContent = me.name || me.email;
     $('user-name').title = me.email;
+    // Debug auth signs the same user straight back in, so signing out is moot.
+    $('debug-badge').hidden = !me.debugAuth;
+    $('signout-btn').hidden = Boolean(me.debugAuth);
     await progress.load();
   } catch (err) {
     if (err instanceof ApiError && err.status === 401) return; // sign-in screen already shown
